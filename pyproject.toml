@@ -1,0 +1,38 @@
+[project]
+name = "vfk-discord"
+version = "0.1.0"
+description = "Discord notifications for Ventforet Kofu: news feed and match-day threads"
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.13",
+    "cloudevents",
+    "functions-framework",
+    "google-cloud-firestore",
+    "requests",
+]
+
+[dependency-groups]
+dev = [
+    "google-auth-oauthlib",
+    "mypy",
+    "pytest",
+    "ruff",
+    "types-requests",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.mypy]
+strict = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["google.*", "google_auth_oauthlib.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
