@@ -1,0 +1,48 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - function: discord-vfk-pr
+            entry_point: notify_news
+            trigger_topic: vfk-discord
+          - function: create-match-threads
+            entry_point: create_match_threads
+            trigger_topic: vfk-match-thread
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # 環境変数・シークレットは既存関数の設定を引き継ぐ（フラグ未指定なら保持される）
+      - name: Deploy ${{ matrix.function }}
+        run: |
+          gcloud functions deploy "${{ matrix.function }}" \
+            --project=vfk-discord \
+            --gen2 \
+            --region=asia-northeast1 \
+            --runtime=python313 \
+            --entry-point="${{ matrix.entry_point }}" \
+            --trigger-topic="${{ matrix.trigger_topic }}" \
+            --source=. \
+            --quiet
