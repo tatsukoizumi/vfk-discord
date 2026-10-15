@@ -59,6 +59,8 @@ gunicorn==26.2.0
     #   uvicorn-worker
 h11==0.16.0
     # via uvicorn
+icalendar==7.3.0
+    # via vfk-discord
 idna==3.19
     # via
     #   anyio
@@ -91,10 +93,14 @@ pyasn1-modules==0.4.2
     # via google-auth
 pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
+python-dateutil==2.9.0.post0
+    # via icalendar
 requests==2.34.2
     # via
     #   google-api-core
     #   vfk-discord
+six==1.17.0
+    # via python-dateutil
 soupsieve==2.9.2
     # via beautifulsoup4
 starlette==1.6.0
@@ -103,6 +109,8 @@ typing-extensions==4.16.0
     # via
     #   beautifulsoup4
     #   grpcio
+tzdata==2026.5
+    # via icalendar
 urllib3==2.7.0
     # via requests
 uvicorn==0.52.4
