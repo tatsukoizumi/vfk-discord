@@ -67,6 +67,52 @@ Webhook ではテキストチャンネルにスレッドを作れないため Bo
 
 プロジェクト `vfk-discord`、リージョン `asia-northeast1`。
 
+### 自動デプロイ（GitHub Actions）
+
+`main` への push で [.github/workflows/deploy.yml](.github/workflows/deploy.yml) が
+2 つの関数を `gcloud functions deploy` で再デプロイする。
+環境変数・シークレットの設定はフラグを指定しないため既存関数の値がそのまま引き継がれる
+（変更したいときは下記の手動デプロイコマンドを使う）。
+
+認証はキーレスの Workload Identity Federation を使う。初回のみ以下をセットアップする:
+
+```sh
+PROJECT_ID=vfk-discord
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+REPO=tatsukoizumi/vfk-discord
+
+# デプロイ用サービスアカウント
+gcloud iam service-accounts create github-deployer --project="$PROJECT_ID"
+SA=github-deployer@$PROJECT_ID.iam.gserviceaccount.com
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:$SA" --role=roles/cloudfunctions.developer
+# 関数の実行サービスアカウント（デフォルトの Compute SA）として動かす権限
+gcloud iam service-accounts add-iam-policy-binding \
+    "$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+    --project="$PROJECT_ID" \
+    --member="serviceAccount:$SA" --role=roles/iam.serviceAccountUser
+
+# GitHub Actions からの OIDC 連携
+gcloud iam workload-identity-pools create github \
+    --project="$PROJECT_ID" --location=global
+gcloud iam workload-identity-pools providers create-oidc github-actions \
+    --project="$PROJECT_ID" --location=global --workload-identity-pool=github \
+    --issuer-uri="https://token.actions.githubusercontent.com" \
+    --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
+    --attribute-condition="assertion.repository == '$REPO'"
+gcloud iam service-accounts add-iam-policy-binding "$SA" \
+    --project="$PROJECT_ID" \
+    --role=roles/iam.workloadIdentityUser \
+    --member="principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/$REPO"
+```
+
+GitHub リポジトリの Secrets（Settings → Secrets and variables → Actions）に以下を登録する:
+
+| Secret | 値 |
+|---|---|
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | `projects/{PROJECT_NUMBER}/locations/global/workloadIdentityPools/github/providers/github-actions` |
+| `GCP_SERVICE_ACCOUNT` | `github-deployer@vfk-discord.iam.gserviceaccount.com` |
+
 ### Secret Manager
 
 ```sh
