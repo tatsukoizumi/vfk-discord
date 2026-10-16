@@ -1,7 +1,13 @@
 from datetime import date, datetime, time
 
 from vfk_discord.ics import JST, CalendarEvent
-from vfk_discord.match import Match, opening_message, parse_event, thread_title
+from vfk_discord.match import (
+    Match,
+    is_unofficial,
+    opening_message,
+    parse_event,
+    thread_title,
+)
 
 
 def _event(
@@ -73,6 +79,20 @@ class TestParseEvent:
 
     def test_rest_without_hyphen_is_skipped(self) -> None:
         assert parse_event(_event("J2 ミーティング")) is None
+
+
+class TestIsUnofficial:
+    def test_tm(self) -> None:
+        assert is_unofficial(_event("TM 浦和-甲府"))
+
+    def test_psm(self) -> None:
+        assert is_unofficial(_event("PSM 松本 3-0 甲府"))
+
+    def test_league(self) -> None:
+        assert not is_unofficial(_event("J2 山形-甲府"))
+
+    def test_empty_summary(self) -> None:
+        assert not is_unofficial(_event(""))
 
 
 class TestThreadTitle:
