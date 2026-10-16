@@ -1,7 +1,7 @@
 import logging
 from datetime import date
 
-from vfk_discord import discord, gcal
+from vfk_discord import discord, ics
 from vfk_discord.config import Settings
 from vfk_discord.match import opening_message, parse_event, thread_title
 from vfk_discord.store import Store
@@ -10,18 +10,13 @@ logger = logging.getLogger(__name__)
 
 
 def run(settings: Settings, store: Store, target_date: date) -> None:
-    access_token = gcal.get_access_token(
-        settings.google_oauth_client_id,
-        settings.google_oauth_client_secret,
-        settings.google_oauth_refresh_token,
-    )
-    events = gcal.list_events(access_token, settings.google_calendar_id, target_date)
+    events = ics.events_on(ics.fetch(settings.match_calendar_ics_url), target_date)
     logger.info("%d event(s) on %s", len(events), target_date.isoformat())
 
     for event in events:
         match = parse_event(event)
         if match is None:
-            logger.info("skipping event: %s", event.get("summary", ""))
+            logger.info("skipping event: %s", event.summary)
             continue
 
         key = f"{match.date.isoformat()}_{match.opponent}"

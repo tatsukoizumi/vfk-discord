@@ -11,10 +11,7 @@ class Settings:
     discord_webhook_url_other: str
     discord_bot_token: str
     discord_match_channel_id: str
-    google_calendar_id: str
-    google_oauth_client_id: str
-    google_oauth_client_secret: str
-    google_oauth_refresh_token: str
+    match_calendar_ics_url: str
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -24,8 +21,5 @@ class Settings:
             discord_webhook_url_other=os.environ.get("DISCORD_WEBHOOK_URL_OTHER", ""),
             discord_bot_token=os.environ.get("DISCORD_BOT_TOKEN", ""),
             discord_match_channel_id=os.environ.get("DISCORD_MATCH_CHANNEL_ID", ""),
-            google_calendar_id=os.environ.get("GOOGLE_CALENDAR_ID", ""),
-            google_oauth_client_id=os.environ.get("GOOGLE_OAUTH_CLIENT_ID", ""),
-            google_oauth_client_secret=os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", ""),
-            google_oauth_refresh_token=os.environ.get("GOOGLE_OAUTH_REFRESH_TOKEN", ""),
+            match_calendar_ics_url=os.environ.get("MATCH_CALENDAR_ICS_URL", ""),
         )

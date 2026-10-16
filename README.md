@@ -31,10 +31,7 @@ uv export --no-dev --no-hashes --no-emit-project -o requirements.txt
 | `DISCORD_WEBHOOK_URL_OTHER` | notify_news | その他ニュース用 Webhook URL |
 | `DISCORD_BOT_TOKEN` | create_match_threads | Bot トークン（Secret Manager 推奨） |
 | `DISCORD_MATCH_CHANNEL_ID` | create_match_threads | スレッドを作るテキストチャンネル ID |
-| `GOOGLE_CALENDAR_ID` | create_match_threads | `c203nq73hug1i4qvqlh52d0r32me32nv@import.calendar.google.com` |
-| `GOOGLE_OAUTH_CLIENT_ID` | create_match_threads | OAuth クライアント ID |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | create_match_threads | OAuth クライアントシークレット（Secret Manager 推奨） |
-| `GOOGLE_OAUTH_REFRESH_TOKEN` | create_match_threads | リフレッシュトークン（Secret Manager 推奨） |
+| `MATCH_CALENDAR_ICS_URL` | create_match_threads | 試合日程の ICS（`http://soccer.phew.homeip.net/download/schedule/data/UTF-8_all_kofu.ics`） |
 
 ## Discord Bot の準備（試合日スレッド用）
 
@@ -45,23 +42,11 @@ Webhook ではテキストチャンネルにスレッドを作れないため Bo
    View Channel / Send Messages / Create Public Threads / Send Messages in Threads
 3. 対象チャンネルの ID（開発者モードで右クリック → ID をコピー）を `DISCORD_MATCH_CHANNEL_ID` に設定する
 
-## Google カレンダー認証（試合日スレッド用）
+## 試合日程の取得元
 
-購読カレンダー（ICS インポート）はサービスアカウントと共有できないため、
-ユーザー本人の OAuth リフレッシュトークンを使う。
-
-1. GCP コンソールで OAuth クライアント（アプリケーションの種類: **デスクトップ アプリ**）を作成する
-2. OAuth 同意画面を**本番環境に公開**する
-   （External + Testing のままだとリフレッシュトークンが 7 日で失効する）
-3. リフレッシュトークンを取得し、Secret Manager に登録する:
-
-   ```sh
-   GOOGLE_OAUTH_CLIENT_ID=... GOOGLE_OAUTH_CLIENT_SECRET=... \
-       uv run python scripts/obtain_google_token.py
-   ```
-
-注意: ICS 購読カレンダーは Google 側の更新が半日〜1 日遅れるため、
-前夜のカレンダー変更は当日 08:00 の実行に反映されないことがある。
+[soccer.phew.homeip.net](http://soccer.phew.homeip.net/) が配布する甲府の全試合 ICS を直接取得する。
+件名は `J2 いわき-甲府`（試合後は `J2 鳥栖 2-0 甲府`）、説明は `J2 第11節` の形式で、
+キックオフ未定の試合は終日イベントになる。
 
 ## デプロイ
 
@@ -117,8 +102,6 @@ GitHub リポジトリの Secrets（Settings → Secrets and variables → Actio
 
 ```sh
 printf '%s' "$DISCORD_BOT_TOKEN" | gcloud secrets create DISCORD_BOT_TOKEN --data-file=-
-printf '%s' "$GOOGLE_OAUTH_CLIENT_SECRET" | gcloud secrets create GOOGLE_OAUTH_CLIENT_SECRET --data-file=-
-printf '%s' "$GOOGLE_OAUTH_REFRESH_TOKEN" | gcloud secrets create GOOGLE_OAUTH_REFRESH_TOKEN --data-file=-
 ```
 
 ### ニュース通知（既存関数の再デプロイ）
@@ -148,8 +131,8 @@ gcloud functions deploy create-match-threads \
     --entry-point=create_match_threads \
     --trigger-topic=vfk-match-thread \
     --source=. \
-    --set-env-vars="DISCORD_MATCH_CHANNEL_ID=...,GOOGLE_CALENDAR_ID=c203nq73hug1i4qvqlh52d0r32me32nv@import.calendar.google.com,GOOGLE_OAUTH_CLIENT_ID=..." \
-    --set-secrets="DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN:latest,GOOGLE_OAUTH_CLIENT_SECRET=GOOGLE_OAUTH_CLIENT_SECRET:latest,GOOGLE_OAUTH_REFRESH_TOKEN=GOOGLE_OAUTH_REFRESH_TOKEN:latest"
+    --set-env-vars="DISCORD_MATCH_CHANNEL_ID=...,MATCH_CALENDAR_ICS_URL=http://soccer.phew.homeip.net/download/schedule/data/UTF-8_all_kofu.ics" \
+    --set-secrets="DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN:latest"
 
 gcloud scheduler jobs create pubsub match-thread-schedule \
     --location=asia-northeast1 \

@@ -8,12 +8,12 @@ dependencies = [
     "cloudevents",
     "functions-framework",
     "google-cloud-firestore",
+    "icalendar>=7.3.0",
     "requests",
 ]
 
 [dependency-groups]
 dev = [
-    "google-auth-oauthlib",
     "mypy",
     "pytest",
     "ruff",
@@ -31,7 +31,7 @@ strict = true
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = ["google.*", "google_auth_oauthlib.*"]
+module = ["google.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

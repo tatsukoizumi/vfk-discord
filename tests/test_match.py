@@ -1,6 +1,6 @@
-from datetime import date, time
+from datetime import date, datetime, time
 
-from vfk_discord.gcal import CalendarEvent
+from vfk_discord.ics import JST, CalendarEvent
 from vfk_discord.match import Match, opening_message, parse_event, thread_title
 
 
@@ -11,17 +11,13 @@ def _event(
     date_time: str | None = "2026-09-05T14:00:00+09:00",
     all_day_date: str | None = None,
 ) -> CalendarEvent:
-    start: dict[str, str] = {}
-    if date_time is not None:
-        start["dateTime"] = date_time
+    start: datetime | date
     if all_day_date is not None:
-        start = {"date": all_day_date}
-    return CalendarEvent(
-        summary=summary,
-        description=description,
-        location=location,
-        start=start,  # type: ignore[typeddict-item]
-    )
+        start = date.fromisoformat(all_day_date)
+    else:
+        assert date_time is not None
+        start = datetime.fromisoformat(date_time).astimezone(JST)
+    return CalendarEvent(summary=summary, description=description, location=location, start=start)
 
 
 def _parse(summary: str, **kwargs: str | None) -> Match:
@@ -77,10 +73,6 @@ class TestParseEvent:
 
     def test_rest_without_hyphen_is_skipped(self) -> None:
         assert parse_event(_event("J2 ミーティング")) is None
-
-    def test_event_without_start_is_skipped(self) -> None:
-        event = CalendarEvent(summary="J2 山形-甲府")
-        assert parse_event(event) is None
 
 
 class TestThreadTitle:

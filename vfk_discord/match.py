@@ -1,11 +1,8 @@
 import re
 from dataclasses import dataclass
 from datetime import date, datetime, time
-from zoneinfo import ZoneInfo
 
-from vfk_discord.gcal import CalendarEvent
-
-JST = ZoneInfo("Asia/Tokyo")
+from vfk_discord.ics import CalendarEvent
 
 _LEAGUE_PREFIXES = frozenset({"J1", "J2", "J3"})
 _UNOFFICIAL_PREFIXES = frozenset({"TM", "PSM"})
@@ -26,16 +23,6 @@ class Match:
     venue: str
 
 
-def _parse_start(event: CalendarEvent) -> tuple[date, time | None] | None:
-    start = event.get("start", {})
-    if "dateTime" in start:
-        dt = datetime.fromisoformat(start["dateTime"]).astimezone(JST)
-        return dt.date(), dt.time()
-    if "date" in start:
-        return date.fromisoformat(start["date"]), None
-    return None
-
-
 def _parse_teams(rest: str) -> tuple[str, str] | None:
     """`山形-甲府` / `鳥栖 2-0 甲府` を (home, away) にする。"""
     tokens = rest.split()
@@ -53,7 +40,7 @@ def _parse_teams(rest: str) -> tuple[str, str] | None:
 
 def parse_event(event: CalendarEvent) -> Match | None:
     """カレンダーイベントを Match にする。非公式戦（TM/PSM）や解釈できないものは None。"""
-    summary = event.get("summary", "").strip()
+    summary = event.summary.strip()
     parts = summary.split(None, 1)
     if len(parts) != 2:
         return None
@@ -61,10 +48,10 @@ def parse_event(event: CalendarEvent) -> Match | None:
     if prefix in _UNOFFICIAL_PREFIXES:
         return None
 
-    start = _parse_start(event)
-    if start is None:
-        return None
-    match_date, kickoff = start
+    if isinstance(event.start, datetime):
+        match_date, kickoff = event.start.date(), event.start.time()
+    else:
+        match_date, kickoff = event.start, None
 
     teams = _parse_teams(rest)
     if teams is None:
@@ -79,8 +66,8 @@ def parse_event(event: CalendarEvent) -> Match | None:
         home=home,
         away=away,
         opponent=opponent,
-        round_label=event.get("description", "").strip(),
-        venue=event.get("location", "").strip(),
+        round_label=event.description.strip(),
+        venue=event.location.strip(),
     )
 
 
