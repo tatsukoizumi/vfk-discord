@@ -12,6 +12,9 @@ from vfk_discord.config import Settings
 from vfk_discord.store import Store
 
 logging.basicConfig(level=logging.INFO)
+# Cloud Functions は LOG_EXECUTION_ID=true を設定し、functions-framework がこのモジュールの
+# 読み込み前にルートロガーを WARNING で構成する。basicConfig は既存ハンドラがあると何もしない
+logging.getLogger().setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
