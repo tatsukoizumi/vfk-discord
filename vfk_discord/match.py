@@ -38,6 +38,12 @@ def _parse_teams(rest: str) -> tuple[str, str] | None:
     return home, away
 
 
+def is_unofficial(event: CalendarEvent) -> bool:
+    """練習試合（TM）・プレシーズンマッチ（PSM）か。"""
+    parts = event.summary.split(None, 1)
+    return bool(parts) and parts[0] in _UNOFFICIAL_PREFIXES
+
+
 def parse_event(event: CalendarEvent) -> Match | None:
     """カレンダーイベントを Match にする。非公式戦（TM/PSM）や解釈できないものは None。"""
     summary = event.summary.strip()
@@ -45,7 +51,7 @@ def parse_event(event: CalendarEvent) -> Match | None:
     if len(parts) != 2:
         return None
     prefix, rest = parts
-    if prefix in _UNOFFICIAL_PREFIXES:
+    if is_unofficial(event):
         return None
 
     if isinstance(event.start, datetime):
