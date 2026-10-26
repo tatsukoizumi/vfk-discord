@@ -31,7 +31,7 @@ uv export --no-dev --no-hashes --no-emit-project -o requirements.txt
 | `DISCORD_WEBHOOK_URL_OTHER` | notify_news | その他ニュース用 Webhook URL |
 | `DISCORD_BOT_TOKEN` | create_match_threads | Bot トークン（Secret Manager 推奨） |
 | `DISCORD_MATCH_CHANNEL_ID` | create_match_threads | スレッドを作るテキストチャンネル ID |
-| `MATCH_CALENDAR_ICS_URL` | create_match_threads | 試合日程の ICS（`https://www.jleague.jp/api/club-calendar/kofu/?year=2026&lang=jp`） |
+| `MATCH_CALENDAR_ICS_URL` | create_match_threads | 試合日程の ICS（`https://www.jleague.jp/api/club-calendar/kofu/`） |
 
 ## Discord Bot の準備（試合日スレッド用）
 
@@ -48,8 +48,8 @@ J リーグ公式のクラブ別カレンダー（ICS）を取得する。
 件名は `[Ｊ２]:[A]VS今治 [キックオフ時間]14:05` の形式で、節の情報は含まれない。
 会場は `アシさと` のような略称、キックオフ未定の試合は終日イベントになる。
 
-URL の `year` はシーズン単位（`year=2026` は 2026-27 シーズンで 2027 年 5 月までを含む）。
-シーズンが替わったら `MATCH_CALENDAR_ICS_URL` を更新する。
+`year` クエリを省略すると現在のシーズンが返る（`?year=2025` などで過去シーズンも取得できる）。
+2026-27 シーズンは 2027 年 5 月まで。次シーズンの日程公開後に、省略時の返却が切り替わっているか確認する。
 
 ## デプロイ
 
@@ -134,7 +134,7 @@ gcloud functions deploy create-match-threads \
     --entry-point=create_match_threads \
     --trigger-topic=vfk-match-thread \
     --source=. \
-    --set-env-vars="DISCORD_MATCH_CHANNEL_ID=...,MATCH_CALENDAR_ICS_URL=https://www.jleague.jp/api/club-calendar/kofu/?year=2026&lang=jp" \
+    --set-env-vars="DISCORD_MATCH_CHANNEL_ID=...,MATCH_CALENDAR_ICS_URL=https://www.jleague.jp/api/club-calendar/kofu/" \
     --set-secrets="DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN:latest"
 
 gcloud scheduler jobs create pubsub match-thread-schedule \
