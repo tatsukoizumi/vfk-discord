@@ -31,7 +31,7 @@ uv export --no-dev --no-hashes --no-emit-project -o requirements.txt
 | `DISCORD_WEBHOOK_URL_OTHER` | notify_news | その他ニュース用 Webhook URL |
 | `DISCORD_BOT_TOKEN` | create_match_threads | Bot トークン（Secret Manager 推奨） |
 | `DISCORD_MATCH_CHANNEL_ID` | create_match_threads | スレッドを作るテキストチャンネル ID |
-| `MATCH_CALENDAR_ICS_URL` | create_match_threads | 試合日程の ICS（`http://soccer.phew.homeip.net/download/schedule/data/UTF-8_all_kofu.ics`） |
+| `MATCH_CALENDAR_ICS_URL` | create_match_threads | 試合日程の ICS（`https://www.jleague.jp/api/club-calendar/kofu/?year=2026&lang=jp`） |
 
 ## Discord Bot の準備（試合日スレッド用）
 
@@ -44,9 +44,12 @@ Webhook ではテキストチャンネルにスレッドを作れないため Bo
 
 ## 試合日程の取得元
 
-[soccer.phew.homeip.net](http://soccer.phew.homeip.net/) が配布する甲府の全試合 ICS を直接取得する。
-件名は `J2 いわき-甲府`（試合後は `J2 鳥栖 2-0 甲府`）、説明は `J2 第11節` の形式で、
-キックオフ未定の試合は終日イベントになる。
+J リーグ公式のクラブ別カレンダー（ICS）を取得する。
+件名は `[Ｊ２]:[A]VS今治 [キックオフ時間]14:05` の形式で、節の情報は含まれない。
+会場は `アシさと` のような略称、キックオフ未定の試合は終日イベントになる。
+
+URL の `year` はシーズン単位（`year=2026` は 2026-27 シーズンで 2027 年 5 月までを含む）。
+シーズンが替わったら `MATCH_CALENDAR_ICS_URL` を更新する。
 
 ## デプロイ
 
@@ -131,7 +134,7 @@ gcloud functions deploy create-match-threads \
     --entry-point=create_match_threads \
     --trigger-topic=vfk-match-thread \
     --source=. \
-    --set-env-vars="DISCORD_MATCH_CHANNEL_ID=...,MATCH_CALENDAR_ICS_URL=http://soccer.phew.homeip.net/download/schedule/data/UTF-8_all_kofu.ics" \
+    --set-env-vars="DISCORD_MATCH_CHANNEL_ID=...,MATCH_CALENDAR_ICS_URL=https://www.jleague.jp/api/club-calendar/kofu/?year=2026&lang=jp" \
     --set-secrets="DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN:latest"
 
 gcloud scheduler jobs create pubsub match-thread-schedule \
