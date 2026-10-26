@@ -111,7 +111,7 @@ typing-extensions==4.16.0
     #   grpcio
 tzdata==2026.5
     # via icalendar
-urllib3==2.7.0
+urllib3==2.8.0
     # via requests
 uvicorn==0.52.4
     # via
