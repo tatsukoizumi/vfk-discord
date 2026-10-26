@@ -3,7 +3,7 @@ from datetime import date
 
 from vfk_discord import discord, ics
 from vfk_discord.config import Settings
-from vfk_discord.match import is_unofficial, opening_message, parse_event, thread_title
+from vfk_discord.match import opening_message, parse_event, thread_title
 from vfk_discord.store import Store
 
 logger = logging.getLogger(__name__)
@@ -17,9 +17,6 @@ def run(settings: Settings, store: Store, target_date: date) -> None:
     logger.info("%d event(s) on %s", len(events), target_date.isoformat())
 
     for event in events:
-        if is_unofficial(event):
-            logger.info("skipping unofficial match: %s", event.summary)
-            continue
         match = parse_event(event)
         if match is None:
             # ICS の件名形式が変わった可能性があるので気づけるように WARNING にする
