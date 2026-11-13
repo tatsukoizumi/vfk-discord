@@ -101,7 +101,7 @@ requests==2.34.2
     #   vfk-discord
 six==1.17.0
     # via python-dateutil
-soupsieve==2.9.2
+soupsieve==4.0
     # via beautifulsoup4
 starlette==1.6.0
     # via functions-framework
