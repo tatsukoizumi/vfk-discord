@@ -6,6 +6,7 @@
 |---|---|---|
 | ニュース通知 | `notify_news` | 公式サイトのニュース（試合・チーム・その他）を Webhook で通知 |
 | 試合日スレッド作成 | `create_match_threads` | 公式戦当日の朝にテキストチャンネルへ `9/5 山形` 形式のスレッドを作成し、初回メッセージ（大会/節・対戦カード・キックオフ・会場）を投稿 |
+| X 投稿通知 | `notify_x_posts` | 公式 X アカウント（[@vfk_official](https://x.com/vfk_official)）の新しい投稿の URL を Webhook で送る（返信・リポストは除外、引用は送る） |
 
 ## 開発
 
@@ -32,6 +33,9 @@ uv export --no-dev --no-hashes --no-emit-project -o requirements.txt
 | `DISCORD_BOT_TOKEN` | create_match_threads | Bot トークン（Secret Manager 推奨） |
 | `DISCORD_MATCH_CHANNEL_ID` | create_match_threads | スレッドを作るテキストチャンネル ID |
 | `MATCH_CALENDAR_ICS_URL` | create_match_threads | 試合日程の ICS（`https://www.jleague.jp/api/club-calendar/kofu/`） |
+| `X_BEARER_TOKEN` | notify_x_posts | X API の Bearer Token（Secret Manager） |
+| `X_USER_ID` | notify_x_posts | @vfk_official の user ID（数値） |
+| `DISCORD_WEBHOOK_URL_X` | notify_x_posts | X 投稿用 Webhook URL（Secret Manager） |
 
 ## Discord Bot の準備（試合日スレッド用）
 
@@ -58,7 +62,7 @@ J リーグ公式のクラブ別カレンダー（ICS）を取得する。
 ### 自動デプロイ（GitHub Actions）
 
 `main` への push で [.github/workflows/deploy.yml](.github/workflows/deploy.yml) が
-2 つの関数を `gcloud functions deploy` で再デプロイする。
+各関数を `gcloud functions deploy` で再デプロイする。
 環境変数・シークレットの設定はフラグを指定しないため既存関数の値がそのまま引き継がれる
 （変更したいときは下記の手動デプロイコマンドを使う）。
 
@@ -145,6 +149,75 @@ gcloud scheduler jobs create pubsub match-thread-schedule \
     --message-body="{}"
 ```
 
+### X 投稿通知（新関数）
+
+X API は従量課金で、他アカウントの投稿は1件 $0.005。同じ投稿は UTC の同じ日のうちなら再課金されない。
+課金は返った投稿数に比例するので、ポーリング間隔を縮めても費用はほぼ増えない。
+
+1. [X Developer Console](https://console.x.com) でアプリを作り、クレジットを購入する。
+   請求設定で課金サイクルごとの支出上限（例: $10）を設定しておく（上限に達するとリクエストがブロックされる）
+2. アプリの Bearer Token を発行する
+3. user ID を調べる（1回だけ。User read として $0.01 かかる）:
+
+   ```sh
+   curl -s -H "Authorization: Bearer $X_BEARER_TOKEN" \
+       https://api.x.com/2/users/by/username/vfk_official
+   # {"data":{"id":"<この値を X_USER_ID に使う>", ...}}
+   ```
+
+4. 通知先チャンネルで Webhook を作る
+5. Secret Manager に登録し、関数の実行サービスアカウントに読み取り権限を付ける:
+
+   ```sh
+   PROJECT_NUMBER=$(gcloud projects describe vfk-discord --format='value(projectNumber)')
+   printf '%s' "$X_BEARER_TOKEN" | gcloud secrets create X_BEARER_TOKEN --data-file=-
+   printf '%s' "$DISCORD_WEBHOOK_URL_X" | gcloud secrets create DISCORD_WEBHOOK_URL_X --data-file=-
+   for name in X_BEARER_TOKEN DISCORD_WEBHOOK_URL_X; do
+       gcloud secrets add-iam-policy-binding "$name" \
+           --member="serviceAccount:$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+           --role=roles/secretmanager.secretAccessor
+   done
+   ```
+
+6. トピック・関数・Scheduler を作る。GitHub Actions は既存関数の設定を引き継ぐだけなので、
+   このデプロイは main へのマージより前に済ませる（先にマージすると secrets の無い関数が作られる）:
+
+   ```sh
+   gcloud pubsub topics create vfk-x-posts
+
+   # 実行が重なると同じ投稿を二重に送るので 1 インスタンスに制限する
+   gcloud functions deploy notify-x-posts \
+       --gen2 \
+       --region=asia-northeast1 \
+       --runtime=python313 \
+       --entry-point=notify_x_posts \
+       --trigger-topic=vfk-x-posts \
+       --source=. \
+       --max-instances=1 \
+       --set-env-vars="X_USER_ID=..." \
+       --set-secrets="X_BEARER_TOKEN=X_BEARER_TOKEN:latest,DISCORD_WEBHOOK_URL_X=DISCORD_WEBHOOK_URL_X:latest"
+
+   gcloud scheduler jobs create pubsub x-posts-schedule \
+       --location=asia-northeast1 \
+       --schedule="*/5 * * * *" \
+       --time-zone="Asia/Tokyo" \
+       --topic=vfk-x-posts \
+       --message-body="{}"
+   ```
+
+初回の実行は最新の投稿 ID を記録するだけで、Discord には送らない（過去の投稿が流れ込まないように）。
+2回目以降は、その ID より新しい投稿を古い順に送る。
+
+ポーリング間隔は Scheduler の設定だけで変えられる:
+
+```sh
+gcloud scheduler jobs update pubsub x-posts-schedule \
+    --location=asia-northeast1 --schedule="* * * * *"
+```
+
+通知先チャンネルを変えるときは、`DISCORD_WEBHOOK_URL_X` に新しいバージョンを追加する
+（`gcloud secrets versions add DISCORD_WEBHOOK_URL_X --data-file=-`）。関数は `:latest` を参照しているので、次のコールドスタートから反映される。
+
 ### 動作確認
 
 Pub/Sub メッセージに `{"date": "YYYY-MM-DD"}` を入れると、その日を対象に実行できる
@@ -174,3 +247,5 @@ curl localhost:8080 -X POST \
 （ドキュメント ID = `{YYYY-MM-DD}_{対戦相手}`）に記録し、存在すればスキップする。
 再実行・同日複数回の起動でもスレッドは重複しない。
 ニュース通知は従来どおり `latest_news_id` コレクションで最新 ID を管理する。
+X 投稿通知は `x_latest_post_id` コレクション（ドキュメント ID = user ID）に送信済みの最新投稿 ID を
+1件送るたびに保存する。送信に失敗したら次回はその投稿から再開する。
