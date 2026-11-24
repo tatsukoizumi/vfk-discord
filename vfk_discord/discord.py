@@ -24,17 +24,21 @@ def send_webhook_embed(
     title_url: str,
     thumbnail_url: str,
 ) -> None:
-    payload = {
-        "embeds": [
+    send_webhook_embeds(
+        webhook_url,
+        [
             {
                 "author": {"name": author_name, "url": author_url, "icon_url": author_icon_url},
                 "title": title,
                 "url": title_url,
                 "thumbnail": {"url": thumbnail_url},
             }
-        ]
-    }
-    response = requests.post(webhook_url, json=payload, timeout=_TIMEOUT)
+        ],
+    )
+
+
+def send_webhook_embeds(webhook_url: str, embeds: list[dict[str, object]]) -> None:
+    response = requests.post(webhook_url, json={"embeds": embeds}, timeout=_TIMEOUT)
     response.raise_for_status()
 
 

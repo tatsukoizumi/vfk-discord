@@ -24,6 +24,9 @@ jobs:
           - function: create-match-threads
             entry_point: create_match_threads
             trigger_topic: vfk-match-thread
+          - function: notify-x-posts
+            entry_point: notify_x_posts
+            trigger_topic: vfk-x-posts
     steps:
       - uses: actions/checkout@v4
 

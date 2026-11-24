@@ -23,3 +23,14 @@ class Store:
 
     def mark_match_thread(self, key: str, thread_id: str) -> None:
         self._db.collection("match_threads").document(key).set({"thread_id": thread_id})
+
+    def get_latest_x_post_id(self, user_id: str) -> str:
+        doc = self._db.collection("x_latest_post_id").document(user_id).get()
+        if doc.exists:
+            data = doc.to_dict()
+            if data is not None:
+                return str(data.get("id", ""))
+        return ""
+
+    def set_latest_x_post_id(self, user_id: str, post_id: str) -> None:
+        self._db.collection("x_latest_post_id").document(user_id).set({"id": post_id})

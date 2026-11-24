@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 import functions_framework
 from cloudevents.http import CloudEvent
 
-from vfk_discord import log, match_threads, news
+from vfk_discord import log, match_threads, news, x_posts
 from vfk_discord.config import Settings
 from vfk_discord.store import Store
 
@@ -35,3 +35,9 @@ def notify_news(event: CloudEvent) -> None:
 def create_match_threads(event: CloudEvent) -> None:
     logger.info("create_match_threads triggered: %s", event["id"])
     match_threads.run(Settings.from_env(), Store(), _target_date(event))
+
+
+@functions_framework.cloud_event
+def notify_x_posts(event: CloudEvent) -> None:
+    logger.info("notify_x_posts triggered: %s", event["id"])
+    x_posts.run(Settings.from_env(), Store())
