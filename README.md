@@ -108,13 +108,14 @@ GitHub リポジトリの Secrets（Settings → Secrets and variables → Actio
 ### Secret Manager
 
 ```sh
-printf '%s' "$DISCORD_BOT_TOKEN" | gcloud secrets create DISCORD_BOT_TOKEN --data-file=-
+printf '%s' "$DISCORD_BOT_TOKEN" | gcloud secrets create DISCORD_BOT_TOKEN --project=vfk-discord --data-file=-
 ```
 
 ### ニュース通知（既存関数の再デプロイ）
 
 ```sh
 gcloud functions deploy discord-vfk-pr \
+    --project=vfk-discord \
     --gen2 \
     --region=asia-northeast1 \
     --runtime=python313 \
@@ -129,9 +130,10 @@ gcloud functions deploy discord-vfk-pr \
 ### 試合日スレッド作成（新関数）
 
 ```sh
-gcloud pubsub topics create vfk-match-thread
+gcloud pubsub topics create vfk-match-thread --project=vfk-discord
 
 gcloud functions deploy create-match-threads \
+    --project=vfk-discord \
     --gen2 \
     --region=asia-northeast1 \
     --runtime=python313 \
@@ -142,6 +144,7 @@ gcloud functions deploy create-match-threads \
     --set-secrets="DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN:latest"
 
 gcloud scheduler jobs create pubsub match-thread-schedule \
+    --project=vfk-discord \
     --location=asia-northeast1 \
     --schedule="0 8 * * *" \
     --time-zone="Asia/Tokyo" \
@@ -174,10 +177,11 @@ X API は従量課金で、他アカウントの投稿は1件 $0.005。同じ投
 
    ```sh
    PROJECT_NUMBER=$(gcloud projects describe vfk-discord --format='value(projectNumber)')
-   printf '%s' "$X_BEARER_TOKEN" | gcloud secrets create X_BEARER_TOKEN --data-file=-
-   printf '%s' "$DISCORD_WEBHOOK_URL_X" | gcloud secrets create DISCORD_WEBHOOK_URL_X --data-file=-
+   printf '%s' "$X_BEARER_TOKEN" | gcloud secrets create X_BEARER_TOKEN --project=vfk-discord --data-file=-
+   printf '%s' "$DISCORD_WEBHOOK_URL_X" | gcloud secrets create DISCORD_WEBHOOK_URL_X --project=vfk-discord --data-file=-
    for name in X_BEARER_TOKEN DISCORD_WEBHOOK_URL_X; do
        gcloud secrets add-iam-policy-binding "$name" \
+           --project=vfk-discord \
            --member="serviceAccount:$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
            --role=roles/secretmanager.secretAccessor
    done
@@ -187,10 +191,11 @@ X API は従量課金で、他アカウントの投稿は1件 $0.005。同じ投
    このデプロイは main へのマージより前に済ませる（先にマージすると secrets の無い関数が作られる）:
 
    ```sh
-   gcloud pubsub topics create vfk-x-posts
+   gcloud pubsub topics create vfk-x-posts --project=vfk-discord
 
    # 実行が重なると同じ投稿を二重に送るので 1 インスタンスに制限する
    gcloud functions deploy notify-x-posts \
+       --project=vfk-discord \
        --gen2 \
        --region=asia-northeast1 \
        --runtime=python313 \
@@ -202,6 +207,7 @@ X API は従量課金で、他アカウントの投稿は1件 $0.005。同じ投
        --set-secrets="X_BEARER_TOKEN=X_BEARER_TOKEN:latest,DISCORD_WEBHOOK_URL_X=DISCORD_WEBHOOK_URL_X:latest"
 
    gcloud scheduler jobs create pubsub x-posts-schedule \
+       --project=vfk-discord \
        --location=asia-northeast1 \
        --schedule="*/5 * * * *" \
        --time-zone="Asia/Tokyo" \
@@ -224,11 +230,11 @@ Discord への表示:
 
 ```sh
 gcloud scheduler jobs update pubsub x-posts-schedule \
-    --location=asia-northeast1 --schedule="* * * * *"
+    --project=vfk-discord --location=asia-northeast1 --schedule="* * * * *"
 ```
 
 通知先チャンネルを変えるときは、`DISCORD_WEBHOOK_URL_X` に新しいバージョンを追加する
-（`gcloud secrets versions add DISCORD_WEBHOOK_URL_X --data-file=-`）。関数は `:latest` を参照しているので、次のコールドスタートから反映される。
+（`gcloud secrets versions add DISCORD_WEBHOOK_URL_X --project=vfk-discord --data-file=-`）。関数は `:latest` を参照しているので、次のコールドスタートから反映される。
 
 ### 動作確認
 
@@ -236,9 +242,9 @@ Pub/Sub メッセージに `{"date": "YYYY-MM-DD"}` を入れると、その日�
 （バックフィル・動作確認用）。無ければ JST の今日が対象になる。
 
 ```sh
-gcloud pubsub topics publish vfk-match-thread --message='{"date": "2026-09-05"}'
+gcloud pubsub topics publish vfk-match-thread --project=vfk-discord --message='{"date": "2026-09-05"}'
 # または
-gcloud scheduler jobs run match-thread-schedule --location=asia-northeast1
+gcloud scheduler jobs run match-thread-schedule --project=vfk-discord --location=asia-northeast1
 ```
 
 ローカル実行:
