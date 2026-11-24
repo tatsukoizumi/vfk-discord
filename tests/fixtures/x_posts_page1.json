@@ -1,8 +1,38 @@
 {
   "data": [
-    {"id": "1993000000000000004", "edit_history_tweet_ids": ["1993000000000000004"], "text": "【試合情報】11/29（日）ホームゲーム開催！"},
-    {"id": "1993000000000000003", "edit_history_tweet_ids": ["1993000000000000003"], "text": "本日の練習の様子です https://t.co/xxxx"}
+    {
+      "id": "1993000000000000004",
+      "created_at": "2026-11-24T03:00:00.000Z",
+      "edit_history_tweet_ids": ["1993000000000000004"],
+      "text": "【試合情報】11/29（日）ホームゲーム開催！チケット&amp;イベント情報はこちら https://t.co/AAAAAAAAAA https://t.co/PPPPPPPPPP",
+      "attachments": {"media_keys": ["3_1001", "3_1002"]},
+      "entities": {
+        "urls": [
+          {"start": 40, "end": 63, "url": "https://t.co/AAAAAAAAAA", "expanded_url": "https://www.ventforet.jp/news/match/20261124_01", "display_url": "ventforet.jp/news/match/202…"},
+          {"start": 64, "end": 87, "url": "https://t.co/PPPPPPPPPP", "expanded_url": "https://x.com/vfk_official/status/1993000000000000004/photo/1", "display_url": "pic.x.com/PPPPPPPPPP", "media_key": "3_1001"}
+        ]
+      }
+    },
+    {
+      "id": "1993000000000000003",
+      "created_at": "2026-11-24T01:00:00.000Z",
+      "edit_history_tweet_ids": ["1993000000000000003"],
+      "text": "本日の練習の様子です https://t.co/VVVVVVVVVV",
+      "attachments": {"media_keys": ["7_2001"]},
+      "entities": {
+        "urls": [
+          {"start": 11, "end": 34, "url": "https://t.co/VVVVVVVVVV", "expanded_url": "https://x.com/vfk_official/status/1993000000000000003/video/1", "display_url": "pic.x.com/VVVVVVVVVV", "media_key": "7_2001"}
+        ]
+      }
+    }
   ],
+  "includes": {
+    "media": [
+      {"media_key": "3_1001", "type": "photo", "url": "https://pbs.twimg.com/media/photo1.jpg"},
+      {"media_key": "3_1002", "type": "photo", "url": "https://pbs.twimg.com/media/photo2.jpg"},
+      {"media_key": "7_2001", "type": "video", "preview_image_url": "https://pbs.twimg.com/amplify_video_thumb/2001/img/preview.jpg"}
+    ]
+  },
   "meta": {
     "newest_id": "1993000000000000004",
     "oldest_id": "1993000000000000003",
