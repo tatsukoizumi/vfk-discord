@@ -38,6 +38,11 @@ def send_webhook_embed(
     response.raise_for_status()
 
 
+def send_webhook_message(webhook_url: str, content: str) -> None:
+    response = requests.post(webhook_url, json={"content": content}, timeout=_TIMEOUT)
+    response.raise_for_status()
+
+
 def create_thread(bot_token: str, channel_id: str, name: str) -> str:
     """テキストチャンネルに公開スレッドを作り、スレッド ID を返す。"""
     response = requests.post(

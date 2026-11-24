@@ -1,0 +1,12 @@
+{
+  "data": [
+    {"id": "1993000000000000004", "edit_history_tweet_ids": ["1993000000000000004"], "text": "【試合情報】11/29（日）ホームゲーム開催！"},
+    {"id": "1993000000000000003", "edit_history_tweet_ids": ["1993000000000000003"], "text": "本日の練習の様子です https://t.co/xxxx"}
+  ],
+  "meta": {
+    "newest_id": "1993000000000000004",
+    "oldest_id": "1993000000000000003",
+    "result_count": 2,
+    "next_token": "7140dibdnow9c7btw4b0z0mf6bd2cyd8nv3ga3rqq1cqm"
+  }
+}

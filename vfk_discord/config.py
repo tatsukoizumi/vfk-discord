@@ -12,6 +12,9 @@ class Settings:
     discord_bot_token: str
     discord_match_channel_id: str
     match_calendar_ics_url: str
+    x_bearer_token: str
+    x_user_id: str
+    discord_webhook_url_x: str
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -22,4 +25,7 @@ class Settings:
             discord_bot_token=os.environ.get("DISCORD_BOT_TOKEN", ""),
             discord_match_channel_id=os.environ.get("DISCORD_MATCH_CHANNEL_ID", ""),
             match_calendar_ics_url=os.environ.get("MATCH_CALENDAR_ICS_URL", ""),
+            x_bearer_token=os.environ.get("X_BEARER_TOKEN", ""),
+            x_user_id=os.environ.get("X_USER_ID", ""),
+            discord_webhook_url_x=os.environ.get("DISCORD_WEBHOOK_URL_X", ""),
         )
